@@ -1,0 +1,66 @@
+name: smartgrow
+x-backend: &backend
+  build: ./backend
+  env_file: .env
+  environment:
+    POSTGRES_HOST: db
+    MQTT_HOST: mosquitto
+    MQTT_PORT: 1883
+    MQTT_TLS: 0
+  restart: unless-stopped
+  networks: [private]
+  depends_on:
+    db:
+      condition: service_healthy
+services:
+  db:
+    image: postgres:17-alpine
+    env_file: .env
+    restart: unless-stopped
+    volumes: [db-data:/var/lib/postgresql/data]
+    networks: [private]
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 5s
+      retries: 15
+  web:
+    <<: *backend
+    volumes: [static-data:/app/staticfiles]
+  worker:
+    <<: *backend
+    command: [python, manage.py, mqtt_worker]
+    depends_on:
+      db:
+        condition: service_healthy
+      mosquitto:
+        condition: service_started
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    restart: unless-stopped
+    ports: ['8883:8883']
+    volumes:
+      - ./deploy/mosquitto:/mosquitto/config
+      - ./deploy/tls:/mosquitto/certs:ro
+    networks: [private]
+  nginx:
+    image: nginx:1.28-alpine
+    restart: unless-stopped
+    ports: ['80:80', '443:443']
+    volumes:
+      - ./deploy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./deploy/tls:/etc/nginx/tls:ro
+      - acme-web:/var/www/certbot:ro
+      - static-data:/static:ro
+    networks: [private]
+  certbot:
+    image: certbot/certbot:latest
+    profiles: [tools]
+    volumes:
+      - ./deploy/letsencrypt:/etc/letsencrypt
+      - acme-web:/var/www/certbot
+volumes:
+  db-data:
+  static-data:
+  acme-web:
+networks:
+  private:

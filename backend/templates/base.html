@@ -1,0 +1,8 @@
+{% load static %}<!doctype html>
+<html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#173e35"><title>{% block title %}SmartGrow{% endblock %}</title>
+<link rel="stylesheet" href="{% static 'app.css' %}"></head><body>
+<header class="top"><a class="brand" href="{% url 'dashboard' %}" aria-label="SmartGrow beranda"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M6 24C2 9 15 5 27 5c0 15-6 22-18 18M8 25l13-13"/></svg>smartgrow<span>garden connected.</span></a>
+<nav>{% if user.is_authenticated %}<span class="user">{{ user.username }}</span><form action="{% url 'logout' %}" method="post">{% csrf_token %}<button class="link" type="submit">Keluar</button></form>{% else %}<a href="{% url 'login' %}">Masuk</a>{% endif %}</nav></header>
+<main>{% for message in messages %}<div role="status" class="notice {{ message.tags }}">{{ message }}</div>{% endfor %}{% block content %}{% endblock %}</main>
+<footer>SmartGrow <span>Tumbuh lebih terpantau.</span></footer>{% block scripts %}{% endblock %}</body></html>
