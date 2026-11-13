@@ -237,18 +237,6 @@ void configurePortalRoutes() {
     else portal.send(200, "text/html; charset=utf-8", "<meta name='viewport' content='width=device-width'><h2>SmartGrow sedang menghubungkan...</h2><p>Jika berhasil, hotspot akan ditutup. Jika gagal, sambungkan kembali ke hotspot alat dan coba lagi.</p>");
     scheduleWifi(ssid, password, false, "");
   });
-  portal.on("/networks", HTTP_GET, []() {
-    if (!localPortalClient()) { portal.send(403); return; }
-    StaticJsonDocument<2048> doc;
-    int n = WiFi.scanComplete();
-    doc["scanning"] = n < 0;
-    JsonArray names = doc.createNestedArray("ssids");
-    if (n == WIFI_SCAN_FAILED) WiFi.scanNetworks(true);
-    if (n >= 0) {
-      for (int i = 0; i < n && i < 18; i++) if (WiFi.SSID(i).length()) names.add(WiFi.SSID(i));
-    }
-    String out; serializeJson(doc, out); portal.send(200, "application/json", out);
-  });
   portal.onNotFound([]() {
     if (!localPortalClient()) { portal.send(403); return; }
     portal.sendHeader("Location", "http://192.168.4.1/", true); portal.send(302, "text/plain", "");
@@ -261,13 +249,12 @@ void openPortal() {
   if (!WiFi.softAP(apName().c_str(), apPassword().c_str())) return;
   csrfToken = randomHex(); portalOn = true;
   dns.start(53, "*", IPAddress(192,168,4,1)); portal.begin();
-  WiFi.scanDelete(); WiFi.scanNetworks(true);
 }
 void closePortal() {
   if (LOCAL_TEST) return; // Keep the test page accessible even without a router.
   if (!portalOn) return;
   portal.stop(); dns.stop(); WiFi.softAPdisconnect(true); portalOn = false;
-  WiFi.mode(WIFI_STA); WiFi.scanDelete();
+  WiFi.mode(WIFI_STA);
 }
 bool rememberWifi() {
   StaticJsonDocument<256> doc;

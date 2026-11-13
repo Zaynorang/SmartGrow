@@ -31,12 +31,13 @@ static const char LOCAL_TEST_HTML[] PROGMEM = R"HTML(
 </section>
 <section class="panel"><div class="eyebrow">Opsional</div><h2>Coba Wi-Fi rumah</h2>
 <p id="wifi-state" class="muted">Sensor dapat diuji tanpa mengisi Wi-Fi rumah.</p>
+<p class="muted">Ketik nama Wi-Fi rumah (SSID) dan kata sandinya secara manual.</p>
 <form id="wifi-form" method="post" action="/save"><input type="hidden" name="token" value="%TOKEN%">
-<label for="ssid">Nama Wi-Fi 2,4 GHz</label><input id="ssid" name="ssid" list="networks" maxlength="32" required autocomplete="off"><datalist id="networks"></datalist>
+<label for="ssid">Nama Wi-Fi 2,4 GHz (SSID)</label><input id="ssid" name="ssid" type="text" maxlength="32" required autocomplete="off" autocapitalize="none" spellcheck="false">
 <label for="password">Kata sandi Wi-Fi</label><input id="password" name="password" type="password" minlength="8" maxlength="63" required autocomplete="new-password">
 <button id="wifi-save" disabled>Coba sambungkan</button></form><p id="wifi-result" role="status" aria-live="polite"></p>
 <small>Hotspot uji tetap aktif. Saat alat berpindah kanal Wi-Fi, HP mungkin perlu disambungkan ulang ke hotspot. Koneksi berhasil berarti alat mendapat IP dari router; akses internet tidak diuji.</small>
-<p><small id="scan">Memindai nama Wi-Fi…</small></p></section>
+</section>
 </div>
 <footer><small id="device-info">SmartGrow · mode uji lokal</small><p><small>LCD menampilkan alamat halaman dan sensor secara bergantian. Hasil deteksi perangkat diperiksa saat boot; setelah mengubah kabel, matikan dan nyalakan alat kembali.</small></p></footer>
 </main>
@@ -85,12 +86,6 @@ $('wifi-form').addEventListener('submit',async event=>{
  catch(e){$('wifi-result').textContent='Konfirmasi belum diterima. Periksa koneksi hotspot; tunggu satu menit sebelum mencoba lagi.';}
  finally{wifiBusy=false;await update();}
 });
-async function scan(){
- try{const r=await request('/networks');if(!r.ok)throw new Error('scan');const d=await r.json();if(d.scanning){setTimeout(scan,3000);return;}
-  $('networks').replaceChildren();for(const ssid of d.ssids){const o=document.createElement('option');o.value=ssid;$('networks').append(o);}
-  $('scan').textContent='Nama Wi-Fi juga dapat diketik secara manual.';
- }catch(e){$('scan').textContent='Pemindaian belum tersedia. Ketik nama Wi-Fi secara manual.';}
-}
-poll();scan();
+poll();
 </script></body></html>
 )HTML";
